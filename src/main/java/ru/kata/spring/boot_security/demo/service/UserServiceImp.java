@@ -1,22 +1,32 @@
 package ru.kata.spring.boot_security.demo.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.kata.spring.boot_security.demo.dao.UserDAO;
+import ru.kata.spring.boot_security.demo.model.Role;
 import ru.kata.spring.boot_security.demo.model.User;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
 public class UserServiceImp implements UserService {
 
     private final UserDAO userDAO;
+    private final PasswordEncoder passwordEncoder;
+    private final RoleService roleService;
 
-    public UserServiceImp(UserDAO userDAO) {
+    @Autowired
+    public UserServiceImp(UserDAO userDAO, PasswordEncoder passwordEncoder, RoleService roleService) {
         this.userDAO = userDAO;
+        this.passwordEncoder = passwordEncoder;
+        this.roleService = roleService;
     }
+
 
     @Override
     public List<User> getAllUsers() {
@@ -30,13 +40,31 @@ public class UserServiceImp implements UserService {
 
     @Override
     @Transactional
-    public void saveUser(User user) {
+    public void saveUser(User user, String[] roles) {
+        List<Role> role = new ArrayList<>();
+        role.add(roleService.getAllRoles().get(1));
+        for (String s : roles) {
+            if (s.equals("ROLE_ADMIN")) {
+                role.add(roleService.getAllRoles().get(0));
+            }
+        }
+        user.setRoles(role);
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
         userDAO.saveUser(user);
     }
 
     @Override
     @Transactional
-    public void updateUser(long id, User user) {
+    public void updateUser(long id, User user, String[] roles) {
+        List<Role> role = new ArrayList<>();
+        role.add(roleService.getAllRoles().get(1));
+        for (String s : roles) {
+            if (s.equals("ROLE_ADMIN")) {
+                role.add(roleService.getAllRoles().get(0));
+            }
+        }
+        user.setRoles(role);
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
         userDAO.updateUser(user);
     }
 
